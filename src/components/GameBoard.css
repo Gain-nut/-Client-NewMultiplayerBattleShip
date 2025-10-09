@@ -1,0 +1,50 @@
+/* src/components/GameBoard.css */
+.game-board {
+  position: relative; /* <-- สำคัญมาก */
+  display: grid;
+  grid-template-columns: repeat(8, 40px);
+  grid-template-rows: repeat(8, 40px);
+  gap: 2px;
+  border: 2px solid #61dafb;
+  background-color: #1a1d22;
+  width: fit-content;
+  margin: 20px auto;
+}
+
+.cell {
+  width: 40px;
+  height: 40px;
+  background-color: #282c34;
+  border: 1px solid #444c56;
+}
+
+/* ซ่อน cursor pointer ของ cell เปล่าๆ */
+.cell:not(:has(> div)) {
+  cursor: default;
+}
+
+/* Style สำหรับเรือที่วางไปแล้ว */
+.placed-ship {
+  position: absolute;
+}
+
+.cell.ship {
+  background-color: #586578; /* สีเทาเข้มสำหรับเรือของเรา */
+}
+/* src/components/GameBoard.css */
+/* ... (โค้ดเดิม) ... */
+
+/* เพิ่ม style นี้เข้าไปสำหรับแสดงเงา */
+.cell.hover-preview {
+  background-color: rgba(97, 218, 251, 0.3); /* สีฟ้าโปร่งใส */
+}
+
+.cell.miss {
+  background-color: #5a6578; /* สีเทาอ่อน */
+  opacity: 0.8;
+}
+
+/* Style สำหรับช่องที่ยิงโดน (hit) */
+.cell.hit {
+  background-color: #da3633; /* สีแดง */
+}

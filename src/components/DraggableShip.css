@@ -1,0 +1,65 @@
+
+/* src/components/DraggableShip.css */
+/* .draggable-ship-container {
+  cursor: grab;
+  width: fit-content;
+  height: fit-content;
+  
+} */
+/* .draggable-ship-container:active {
+  cursor: grabbing;
+} */
+
+/* .ship-image {
+  display: block;
+  pointer-events: none;
+  transition: transform 0.2s ease-in-out;
+} */
+
+/* ขนาดสำหรับเรือยาว 4 ช่อง (40px * 4 ช่อง + 2px * 3 gap = 166px) */
+/* .ship-image.horizontal {
+  width: 166px;
+  height: 40px;
+} */
+
+/* .ship-image.vertical {
+  width: 166px;
+  height: 40px; */
+  /* transform-origin: top left; คือการบอกให้หมุนรอบจุดมุมซ้ายบน
+    rotate(90deg); คือหมุนไป 90 องศา
+    translateY(-100%); คือหลังจากหมุนแล้ว ให้ขยับรูปขึ้นไปข้างบนเท่ากับความสูงของมันเอง (100%)
+    ซึ่งจะทำให้มุมขวาบนของรูปเดิม มาอยู่ที่ตำแหน่งมุมซ้ายบนแทน ทำให้วางตรงช่องพอดี
+  */
+  /* transform-origin: top left;
+  transform: rotate(90deg) translateY(-100%);
+} */
+
+
+/* src/components/DraggableShip.css */
+.draggable-ship-container {
+  cursor: grab;
+  width: fit-content;
+  height: fit-content;
+}
+
+.draggable-ship-container:active {
+  cursor: grabbing;
+}
+
+.ship-image {
+  display: block;
+  pointer-events: none; /* สำคัญมาก */
+  transition: transform 0.2s ease-in-out;
+}
+
+.ship-image.horizontal {
+  width: 166px; /* 40*4 + 2*3 */
+  height: 40px;
+}
+
+.ship-image.vertical {
+  width: 166px;
+  height: 40px;
+  transform-origin: top left;
+  transform: rotate(90deg) translateY(-100%);
+}
