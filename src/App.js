@@ -63,21 +63,6 @@ function App() {
     };
   }, []);
     
-  //   // เริ่มดักฟัง
-  //   socket.on('connect', onConnect);
-  //   socket.on('disconnect', onDisconnect);
-  //   socket.on('join-success', onJoinSuccess);
-  //   socket.on('update-game-state', onUpdateGameState);
-
-  //   // cleanup function: จะทำงานเมื่อ component ถูกทำลาย
-  //   // เพื่อยกเลิกการดักฟัง ป้องกัน memory leak
-  //   return () => {
-  //     socket.off('connect', onConnect);
-  //     socket.off('disconnect', onDisconnect);
-  //     socket.off('join-success', onJoinSuccess);
-  //     socket.off('update-game-state', onUpdateGameState);
-  //   };
-  // }, []); // [] หมายความว่าให้ useEffect นี้ทำงานแค่ครั้งเดียวตอนเริ่มต้น
 
   return (
     // --- ครอบ div หลักด้วย DndProvider ---

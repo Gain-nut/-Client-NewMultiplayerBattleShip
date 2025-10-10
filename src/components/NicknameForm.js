@@ -6,7 +6,7 @@ function NicknameForm() {
   const [name, setName] = useState('');
 
   const handleSubmit = (event) => {
-    event.preventDefault(); // ป้องกันไม่ให้หน้าเว็บ refresh
+    event.preventDefault(); 
     if (name.trim()) {
       socket.emit('join-game', name.trim()); // ส่ง event 'join-game' ไปให้ server
     }

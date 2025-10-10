@@ -8,4 +8,5 @@ import { io } from 'socket.io-client';
 const SERVER_URL = 'http://localhost:3001';
 // const SERVER_URL = 'http://172.20.10.2:3001';
 
+
 export const socket = io(SERVER_URL);

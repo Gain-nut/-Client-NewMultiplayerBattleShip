@@ -1,5 +1,3 @@
-
-// src/components/GameBoard.js
 // src/components/GameBoard.js
 import React, { useState } from 'react';
 import { useDrop } from 'react-dnd';

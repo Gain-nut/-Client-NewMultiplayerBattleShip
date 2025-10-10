@@ -1,4 +1,3 @@
-
 // src/components/GameBoard.js// src/components/Game.js
 import React, { useState, useEffect } from 'react';
 import { useDrop } from 'react-dnd';
@@ -121,6 +120,7 @@ function Game({ gameState, nickname }) {
   }
 
   if (gameState.gameStatus === 'playing' || gameState.gameStatus === 'gameover') {
+  
     const opponentId = Object.keys(gameState.players).find(id => id !== myPlayerId);
     const opponent = opponentId ? gameState.players[opponentId] : null;
     const isMyTurn = gameState.currentPlayerTurn === myPlayerId;
@@ -158,7 +158,6 @@ function Game({ gameState, nickname }) {
             </div>
         );
     }
-
     if (gameState.gameStatus === 'gameover') {
         return (
             <div className="game-over">
@@ -167,6 +166,16 @@ function Game({ gameState, nickname }) {
             </div>
         );
     }
+
+    // if (gameState.gameStatus === 'gameover') {
+    //   console.log("GameOver")
+    //     return (
+    //         <div className="game-over">
+    //             <h1>Game Over!</h1>
+    //             <h2>Winner is: {gameState.players[gameState.winner]?.nickname}</h2>
+    //         </div>
+    //     );
+    // }
   }
 
   return <div>Unhandled game state: {gameState.gameStatus}</div>;

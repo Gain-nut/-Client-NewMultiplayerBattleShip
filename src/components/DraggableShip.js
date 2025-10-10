@@ -2,7 +2,7 @@
 import React from 'react';
 import { useDrag } from 'react-dnd';
 import './DraggableShip.css';
-import shipImage from '../assets/battleship.png'; // ตรวจสอบว่า path ถูกต้อง
+import shipImage from '../assets/battleship.png'; 
 
 export const ItemTypes = {
   SHIP: 'ship',
