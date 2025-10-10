@@ -1,4 +1,4 @@
-// src/components/GameBoard.js// src/components/Game.js
+
 import React, { useState, useEffect } from 'react';
 import { useDrop } from 'react-dnd';
 import { socket } from '../socket';
@@ -85,6 +85,9 @@ function Game({ gameState, nickname }) {
     });
     socket.emit('place-ships', allShipParts);
   };
+  const handleReadyForNextRound = () => {
+    socket.emit('ready-for-next-round');
+  };
 
   if (!gameState || !me) return <div>Loading or connecting...</div>;
 
@@ -119,7 +122,8 @@ function Game({ gameState, nickname }) {
     );
   }
 
-  if (gameState.gameStatus === 'playing' || gameState.gameStatus === 'gameover') {
+  if (gameState.gameStatus === 'playing' || gameState.gameStatus === 'gameover'|| gameState.gameStatus === 'matchover') {
+  // if (['playing', 'gameover', 'matchover'].includes(gameState.gameStatus)) {
   
     const opponentId = Object.keys(gameState.players).find(id => id !== myPlayerId);
     const opponent = opponentId ? gameState.players[opponentId] : null;
@@ -137,6 +141,34 @@ function Game({ gameState, nickname }) {
         socket.emit('fire-shot', { row, col });
       }
     };
+     if (gameState.gameStatus === 'gameover') {
+      const winnerName = gameState.players[gameState.winner]?.nickname;
+      return (
+        <div className="game-over">
+          <h1>Round Over!</h1>
+          <h2>Winner is: {winnerName}</h2>
+          <h3>Score: {me.nickname} {me.score} - {opponent?.nickname} {opponent?.score}</h3>
+          {me.readyForNextRound ? (
+            <p>Waiting for opponent...</p>
+          ) : (
+            <button onClick={handleReadyForNextRound}>Ready for Next Round</button>
+          )}
+        </div>
+      );
+    }
+
+    // RENDER: MATCH OVER (จบทั้งเกม)
+    if (gameState.gameStatus === 'matchover') {
+        const winnerName = gameState.players[gameState.winner]?.nickname;
+        return (
+            <div className="game-over">
+                <h1>MATCH OVER!</h1>
+                <h2>FINAL WINNER IS: {winnerName}</h2>
+                <h3>Final Score: {me.nickname} {me.score} - {opponent?.nickname} {opponent?.score}</h3>
+                {/* อาจจะมีปุ่มสำหรับ Reset เกมทั้งหมด หรือกลับไปหน้าแรก */}
+            </div>
+        );
+    }
     
     if (gameState.gameStatus === 'playing') {
         return (
@@ -158,24 +190,7 @@ function Game({ gameState, nickname }) {
             </div>
         );
     }
-    if (gameState.gameStatus === 'gameover') {
-        return (
-            <div className="game-over">
-                <h1>Game Over!</h1>
-                <h2>Winner is: {gameState.players[gameState.winner]?.nickname}</h2>
-            </div>
-        );
-    }
-
-    // if (gameState.gameStatus === 'gameover') {
-    //   console.log("GameOver")
-    //     return (
-    //         <div className="game-over">
-    //             <h1>Game Over!</h1>
-    //             <h2>Winner is: {gameState.players[gameState.winner]?.nickname}</h2>
-    //         </div>
-    //     );
-    // }
+  
   }
 
   return <div>Unhandled game state: {gameState.gameStatus}</div>;
