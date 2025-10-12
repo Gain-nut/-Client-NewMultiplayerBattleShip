@@ -85,7 +85,7 @@ function App() {
       <div className="App">
         <header className="App-header">
           <h1>Battleship Game</h1>
-          <p>Status: {isConnected ? 'Connected' : 'Disconnected'}</p>
+          <p>Status: {isConnected ? '🟢 Connected' : '🔴 Disconnected'}</p>
         </header>
         <main>
           {!nickname ? (
