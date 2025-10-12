@@ -1510,6 +1510,7 @@ import GameBoard from './GameBoard';
 import DraggableShip, { ItemTypes } from './DraggableShip';
 import './Game.css';
 
+
 const initialShips = [
   { id: 1, length: 4, position: null, orientation: 'horizontal', image: '/images/shipRed.png' },
   { id: 2, length: 4, position: null, orientation: 'horizontal', image: '/images/shipRed.png' },
@@ -1553,12 +1554,19 @@ function Game({ gameState, nickname }) {
   }, [gameState, me]);
 
   const handleShipDrop = (droppedShip, newPosition) => {
+    // If we want to account for grabOffset in the future, we can use it here
+    const adjustedPosition = {
+      row: newPosition.row,
+      col: newPosition.col,
+    };
+
     setMyShips(currentShips =>
       currentShips.map(ship =>
-        ship.id === droppedShip.id ? { ...ship, position: newPosition } : ship
+        ship.id === droppedShip.id ? { ...ship, position: adjustedPosition } : ship
       )
     );
   };
+
 
   const handleRotateShip = (shipId) => {
     setMyShips(ships => ships.map(s => {
@@ -1653,7 +1661,7 @@ function Game({ gameState, nickname }) {
                   <div className="board-area">
                     <h3>Your Board (Score: {me.score})</h3>
                     <GameBoard
-                      ships={myShips.filter(s => s.position)} // 👈 show your ships with image
+                      ships={myShips.filter(s => s.position)} // show your ships with image
                       boardData={myDisplayBoard}
                     />
                   </div>

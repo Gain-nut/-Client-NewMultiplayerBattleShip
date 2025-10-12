@@ -420,7 +420,6 @@
 
 
 // src/components/GameBoard.js
-// src/components/GameBoard.js
 import React, { useState } from 'react';
 import { useDrop } from 'react-dnd';
 import { ItemTypes } from './DraggableShip';
@@ -429,7 +428,12 @@ import './GameBoard.css';
 
 const Cell = ({ value, isHovered, onClick }) => {
     const cellClass = `cell ${value || ''} ${isHovered ? 'hover-preview' : ''}`;
-    return <div className={cellClass} onClick={onClick}></div>;
+
+    return (
+        <div className={cellClass} onClick={onClick}>
+            {value === 'hit' && <div className="hit-cross"></div>}
+        </div>
+    );
 };
 
 const GameBoard = ({ ships = [], onDropShip, onRotateShip, boardData = Array(8).fill(Array(8).fill(null)), onCellClick = () => {} }) => {
