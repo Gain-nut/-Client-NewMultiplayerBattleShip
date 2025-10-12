@@ -1511,11 +1511,12 @@ import DraggableShip, { ItemTypes } from './DraggableShip';
 import './Game.css';
 
 const initialShips = [
-  { id: 1, length: 4, position: null, orientation: 'horizontal' },
-  { id: 2, length: 4, position: null, orientation: 'horizontal' },
-  { id: 3, length: 4, position: null, orientation: 'horizontal' },
-  { id: 4, length: 4, position: null, orientation: 'horizontal' },
+  { id: 1, length: 4, position: null, orientation: 'horizontal', image: '/images/shipRed.png' },
+  { id: 2, length: 4, position: null, orientation: 'horizontal', image: '/images/shipRed.png' },
+  { id: 3, length: 4, position: null, orientation: 'horizontal', image: '/images/shipRed.png' },
+  { id: 4, length: 4, position: null, orientation: 'horizontal', image: '/images/shipRed.png' },
 ];
+
 
 function Game({ gameState, nickname }) {
   const [myShips, setMyShips] = useState(initialShips);
@@ -1649,14 +1650,26 @@ function Game({ gameState, nickname }) {
                     <div className="timer">Time Left: {gameState.timer}</div>
                 </div>
                 <div className="boards-container">
-                    <div className="board-area">
-                        <h3>Your Board (Score: {me.score})</h3>
-                        <GameBoard ships={[]} boardData={myDisplayBoard} />
-                    </div>
-                    <div className="board-area">
-                        <h3>{opponent?.nickname}'s Board (Score: {opponent?.score || 0})</h3>
-                        {opponent ? <GameBoard ships={[]} onCellClick={handleFire} boardData={opponent.gameBoard} /> : <p>Waiting...</p>}
-                    </div>
+                  <div className="board-area">
+                    <h3>Your Board (Score: {me.score})</h3>
+                    <GameBoard
+                      ships={myShips.filter(s => s.position)} // 👈 show your ships with image
+                      boardData={myDisplayBoard}
+                    />
+                  </div>
+
+                  <div className="board-area">
+                    <h3>{opponent?.nickname}'s Board (Score: {opponent?.score || 0})</h3>
+                    {opponent ? (
+                      <GameBoard
+                        ships={[]} // 👈 opponent ships hidden
+                        onCellClick={handleFire}
+                        boardData={opponent.gameBoard}
+                      />
+                    ) : (
+                      <p>Waiting...</p>
+                    )}
+                  </div>
                 </div>
             </div>
         );

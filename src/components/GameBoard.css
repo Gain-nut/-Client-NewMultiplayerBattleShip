@@ -29,7 +29,7 @@
 }
 
 .cell.ship {
-  background-color: #586578; /* สีเทาเข้มสำหรับเรือของเรา */
+  background-color: None;  
 }
 /* src/components/GameBoard.css */
 /* ... (โค้ดเดิม) ... */
