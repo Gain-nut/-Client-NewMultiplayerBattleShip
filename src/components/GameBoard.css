@@ -17,6 +17,7 @@
   height: 40px;
   background-color: #282c34;
   border: 1px solid #444c56;
+  box-sizing: border-box;  
 }
 
 
@@ -32,7 +33,7 @@
 
 
 .cell.ship {
-  background-color: None;  
+  background-color: none;  
 }
 /* src/components/GameBoard.css */
 /* ... (โค้ดเดิม) ... */
