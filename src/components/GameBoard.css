@@ -12,23 +12,28 @@
 }
 
 .cell {
+  position: relative; /* needed for the hit cross to be positioned relative to the cell */
   width: 40px;
   height: 40px;
   background-color: #282c34;
   border: 1px solid #444c56;
+  box-sizing: border-box;  
 }
 
+
+/* ซ่อน cursor pointer ของ cell เปล่าๆ */
 .cell:not(:has(> div)) {
   cursor: default;
 }
 
-/* Style สำหรับเรือที่วางไปแล้ว */
 .placed-ship {
   position: absolute;
+  z-index: 500; /* below the hit cross */
 }
 
+
 .cell.ship {
-  background-color: #586578; /* สีเทาเข้มสำหรับเรือของเรา */
+  background-color: none;  
 }
 /* src/components/GameBoard.css */
 /* ... (โค้ดเดิม) ... */
@@ -39,11 +44,41 @@
 }
 
 .cell.miss {
-  background-color: #61dafb; /* สีเทาอ่อน */
+  background-color: #5a6578; /* สีเทาอ่อน */
   opacity: 0.8;
 }
 
-/* Style สำหรับช่องที่ยิงโดน (hit) */
+/* Style สำหรับช่องที่ยิงโดน (hit) — show a red X instead of background */
 .cell.hit {
-  background-color: #da3633; /* สีแดง */
+  position: relative; /* required for the cross overlay */
 }
+
+.hit-cross {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1000; /* above ships */
+}
+
+.hit-cross::before,
+.hit-cross::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100%;
+  height: 4px; /* thickness of the X lines */
+  background-color: red;
+  transform-origin: center;
+}
+
+.hit-cross::before {
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.hit-cross::after {
+  transform: translate(-50%, -50%) rotate(-45deg);
+}
+
