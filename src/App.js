@@ -1,86 +1,50 @@
-// src/App.js
 import React, { useState, useEffect } from 'react';
-import { socket } from './socket'; // นำเข้าตัวเชื่อมต่อที่เราสร้างไว้
-import NicknameForm from './components/NicknameForm';
-import Game from './components/Game'; // เราจะสร้างไฟล์นี้ต่อไป
-import './App.css';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
+import { socket } from './socket';
+import NicknameForm from './components/NicknameForm';
+import Game from './components/Game';
+import './App.css';
 
 function App() {
-  // --- State Management ---
-  // useState คือ "กล่องเก็บข้อมูล" ของ Component
-  const [isConnected, setIsConnected] = useState(socket.connected);
   const [nickname, setNickname] = useState('');
+  const [isConnected, setIsConnected] = useState(socket.connected);
   const [gameState, setGameState] = useState(null);
 
-  // --- Side Effects ---
-  // useEffect คือ "กล่องสำหรับทำงานพิเศษ" ที่จะรันเมื่อ Component ถูกสร้าง
-  // เราใช้มันเพื่อตั้งค่าการดักฟัง event จาก server
   useEffect(() => {
-    // ดักฟัง event 'connect'
-    function onConnect() {
-      setIsConnected(true);
-      console.log('Connected to server!');
-    }
+    const onConnect = () => setIsConnected(true);
+    const onDisconnect = () => setIsConnected(false);
+    const onUpdateGameState = (newState) => setGameState(newState);
 
-    // ดักฟัง event 'disconnect'
-    function onDisconnect() {
-      setIsConnected(false);
-      console.log('Disconnected from server!');
-    }
-    
-    // ดักฟัง event 'join-success' ที่ server ส่งมาหลังตั้งชื่อสำเร็จ
-    function onJoinSuccess(data) {
-        setNickname(data.nickname);
-    }
-
-    function onUpdateGameState(newGameState) {
-      console.log('Received game state update:', newGameState);
-      setGameState(newGameState);
-    }
-    
-    // ฟังก์ชันใหม่สำหรับจัดการเมื่อเกมเริ่ม
-    function onGameStart(initialGameState) {
-        console.log('Game is starting!', initialGameState);
-        setGameState(initialGameState); // อัปเดต state เริ่มต้น
-    }
-    
-    // เริ่มดักฟัง
     socket.on('connect', onConnect);
     socket.on('disconnect', onDisconnect);
-    socket.on('join-success', onJoinSuccess);
     socket.on('update-game-state', onUpdateGameState);
-    socket.on('game-start', onGameStart); // <-- เพิ่มการดักฟัง 'game-start'
 
-    // cleanup function
     return () => {
       socket.off('connect', onConnect);
       socket.off('disconnect', onDisconnect);
-      socket.off('join-success', onJoinSuccess);
       socket.off('update-game-state', onUpdateGameState);
-      socket.off('game-start', onGameStart); // <-- อย่าลืมเอาออกด้วย
     };
   }, []);
-    
-  //   // เริ่มดักฟัง
-  //   socket.on('connect', onConnect);
-  //   socket.on('disconnect', onDisconnect);
-  //   socket.on('join-success', onJoinSuccess);
-  //   socket.on('update-game-state', onUpdateGameState);
 
-  //   // cleanup function: จะทำงานเมื่อ component ถูกทำลาย
-  //   // เพื่อยกเลิกการดักฟัง ป้องกัน memory leak
-  //   return () => {
-  //     socket.off('connect', onConnect);
-  //     socket.off('disconnect', onDisconnect);
-  //     socket.off('join-success', onJoinSuccess);
-  //     socket.off('update-game-state', onUpdateGameState);
-  //   };
-  // }, []); // [] หมายความว่าให้ useEffect นี้ทำงานแค่ครั้งเดียวตอนเริ่มต้น
+  // ฟังก์ชันนี้จะรับชื่อจาก NicknameForm มาเก็บไว้
+  const handleSetNickname = (nick) => {
+    if (nick) {
+      setNickname(nick);
+    }
+  };
+
+  // ฟังก์ชันสำหรับปุ่ม "Start Game" ที่จะส่งข้อมูลไป server จริงๆ
+  const handleStartGame = () => {
+    if (nickname) {
+      socket.emit('join-game', nickname);
+    }
+  };
+
+  // ตรวจสอบว่าผู้เล่นเข้าร่วมเกมแล้วหรือยังจาก gameState
+  const hasJoinedGame = gameState?.players && Object.values(gameState.players).some(p => p.nickname === nickname);
 
   return (
-    // --- ครอบ div หลักด้วย DndProvider ---
     <DndProvider backend={HTML5Backend}>
       <div className="App">
         <header className="App-header">
@@ -88,11 +52,23 @@ function App() {
           <p>Status: {isConnected ? '🟢 Connected' : '🔴 Disconnected'}</p>
         </header>
         <main>
-          {!nickname ? (
-            <NicknameForm />
-          ) : (
-            <Game gameState={gameState} nickname={nickname} />
+          {/* --- Logic การแสดงผล 3 ขั้นตอน --- */}
+
+          {/* 1. ยังไม่ได้ตั้งชื่อ: แสดง NicknameForm */}
+          {!nickname && <NicknameForm onJoin={handleSetNickname} />}
+
+          {/* 2. ตั้งชื่อแล้ว แต่ยังไม่ได้เข้าร่วมเกม: แสดงหน้า Welcome */}
+          {nickname && !hasJoinedGame && (
+            <div className="welcome-screen">
+              <h2>Welcome, {nickname}!</h2>
+              <button onClick={handleStartGame} className="start-game-btn">
+                Start Game
+              </button>
+            </div>
           )}
+
+          {/* 3. เข้าร่วมเกมแล้ว: แสดง Game component */}
+          {nickname && hasJoinedGame && <Game gameState={gameState} nickname={nickname} />}
         </main>
       </div>
     </DndProvider>

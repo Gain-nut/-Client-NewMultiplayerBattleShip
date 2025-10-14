@@ -1,25 +1,26 @@
-// src/components/NicknameForm.js
 import React, { useState } from 'react';
-import { socket } from '../socket';
 
-function NicknameForm() {
+// 1. รับ onJoin เข้ามาเป็น prop
+function NicknameForm({ onJoin }) {
   const [name, setName] = useState('');
 
   const handleSubmit = (event) => {
-    event.preventDefault(); // ป้องกันไม่ให้หน้าเว็บ refresh
+    event.preventDefault();
     if (name.trim()) {
-      socket.emit('join-game', name.trim()); // ส่ง event 'join-game' ไปให้ server
+      // 2. เรียกใช้ onJoin ที่ได้รับมาแทนการ emit เอง
+      onJoin(name.trim());
     }
   };
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form className="nickname-form" onSubmit={handleSubmit}>
       <h2>Enter Your Nickname</h2>
       <input
         type="text"
         value={name}
         onChange={(e) => setName(e.target.value)}
         placeholder="Your name"
+        autoFocus
       />
       <button type="submit">Join Game</button>
     </form>
