@@ -4,12 +4,23 @@ import { HTML5Backend } from 'react-dnd-html5-backend';
 import { socket } from './socket';
 import NicknameForm from './components/NicknameForm';
 import Game from './components/Game';
+
+import shipRed from './assets/shipRed.png';
+import shipBlue from './assets/shipBlue.png';
+import shipGreen from './assets/shipGreen.png';
+import shipYellow from './assets/shipYellow.png';
+
 import './App.css';
 
 function App() {
   const [nickname, setNickname] = useState('');
   const [isConnected, setIsConnected] = useState(socket.connected);
   const [gameState, setGameState] = useState(null);
+
+  // ✅ Ship skins
+  const availableShips = [shipRed, shipBlue, shipGreen, shipYellow];
+  const [selectedShipIndex, setSelectedShipIndex] = useState(0);
+  const selectedShipSkin = availableShips[selectedShipIndex];
 
   useEffect(() => {
     const onConnect = () => setIsConnected(true);
@@ -27,22 +38,33 @@ function App() {
     };
   }, []);
 
-  // ฟังก์ชันนี้จะรับชื่อจาก NicknameForm มาเก็บไว้
   const handleSetNickname = (nick) => {
-    if (nick) {
-      setNickname(nick);
-    }
+    if (nick) setNickname(nick);
   };
 
-  // ฟังก์ชันสำหรับปุ่ม "Start Game" ที่จะส่งข้อมูลไป server จริงๆ
+  // ✅ Keep only nickname for socket emit (server expects this)
   const handleStartGame = () => {
     if (nickname) {
       socket.emit('join-game', nickname);
     }
   };
 
-  // ตรวจสอบว่าผู้เล่นเข้าร่วมเกมแล้วหรือยังจาก gameState
-  const hasJoinedGame = gameState?.players && Object.values(gameState.players).some(p => p.nickname === nickname);
+  const hasJoinedGame =
+    gameState?.players &&
+    Object.values(gameState.players).some((p) => p.nickname === nickname);
+
+  // ✅ Change ship skin
+  const prevSkin = () => {
+    setSelectedShipIndex((prev) =>
+      prev === 0 ? availableShips.length - 1 : prev - 1
+    );
+  };
+
+  const nextSkin = () => {
+    setSelectedShipIndex((prev) =>
+      prev === availableShips.length - 1 ? 0 : prev + 1
+    );
+  };
 
   return (
     <DndProvider backend={HTML5Backend}>
@@ -52,23 +74,37 @@ function App() {
           <p>Status: {isConnected ? '🟢 Connected' : '🔴 Disconnected'}</p>
         </header>
         <main>
-          {/* --- Logic การแสดงผล 3 ขั้นตอน --- */}
-
-          {/* 1. ยังไม่ได้ตั้งชื่อ: แสดง NicknameForm */}
           {!nickname && <NicknameForm onJoin={handleSetNickname} />}
 
-          {/* 2. ตั้งชื่อแล้ว แต่ยังไม่ได้เข้าร่วมเกม: แสดงหน้า Welcome */}
           {nickname && !hasJoinedGame && (
             <div className="welcome-screen">
               <h2>Welcome, {nickname}!</h2>
+              <p className="choose-ship-text">Select Your Ship</p>
+
+              <div className="ship-selector">
+                <button onClick={prevSkin}>◀</button>
+                <img
+                  src={selectedShipSkin}
+                  alt="Selected Ship"
+                  className="selected-ship"
+                />
+                <button onClick={nextSkin}>▶</button>
+              </div>
+
               <button onClick={handleStartGame} className="start-game-btn">
                 Start Game
               </button>
             </div>
           )}
 
-          {/* 3. เข้าร่วมเกมแล้ว: แสดง Game component */}
-          {nickname && hasJoinedGame && <Game gameState={gameState} nickname={nickname} />}
+          {/* ✅ Pass selectedShipSkin into Game */}
+          {nickname && hasJoinedGame && (
+            <Game
+              gameState={gameState}
+              nickname={nickname}
+              selectedShipSkin={selectedShipSkin}
+            />
+          )}
         </main>
       </div>
     </DndProvider>

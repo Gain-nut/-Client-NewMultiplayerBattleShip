@@ -1,4 +1,3 @@
-
 body {
   background-color: #282c34;
   color: white;
@@ -44,6 +43,54 @@ button:hover {
 }
 
 ul {
-    list-style: none;
-    padding: 0;
+  list-style: none;
+  padding: 0;
+}
+
+/* --- Ship selector arrows --- */
+.ship-selector button {
+  background: none;      /* remove background */
+  border: none;          /* remove border */
+  padding: 5px 10px;     
+  font-size: 28px;       /* bigger arrow */
+  color: white;          
+  cursor: pointer;
+}
+
+.ship-selector button:hover {
+  color: #61dafb;        /* subtle hover effect */
+}
+
+.ship-selector {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 30px;             /* more spacing between arrow and image */
+  margin-bottom: 25px;   /* space below ship selector */
+}
+
+.selected-ship {
+  width: 250px;           /* bigger ship */
+  height: auto;
+}
+
+/* --- Welcome screen text --- */
+.welcome-screen h2 {
+  font-size: 32px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.choose-ship-text {
+  font-size: 22px;
+  color: #61dafb;
+  font-weight: 600;
+  margin-bottom: 15px;
+}
+
+/* --- Start Game button --- */
+.start-game-btn {
+  margin-top: 30px;      /* move button further down */
+  padding: 12px 25px;    /* slightly bigger */
+  font-size: 18px;
 }
