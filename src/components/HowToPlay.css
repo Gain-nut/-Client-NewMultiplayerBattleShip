@@ -1,0 +1,65 @@
+/* --- Overlay that darkens the screen --- */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+/* --- Main popup box --- */
+.modal-content {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 20px 24px;
+  width: min(90vw, 560px);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  position: relative;
+  max-height: 80vh;
+  overflow: auto;
+  text-align: left;
+}
+
+/* --- Close (×) button --- */
+.modal-close {
+  position: absolute;
+  right: 12px;
+  top: 10px;
+  border: none;
+  background: transparent;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+/* --- Force readable text colors inside modal --- */
+.modal-content,
+.modal-content h1,
+.modal-content h2,
+.modal-content h3,
+.modal-content p,
+.modal-content li,
+.modal-content strong {
+  color: #1f2937 !important; /* dark gray text */
+  line-height: 1.5;
+}
+
+/* --- Title style --- */
+.modal-content h2 {
+  margin-top: 0;
+  margin-bottom: 12px;
+  font-weight: 700;
+  text-align: center;
+}
+
+/* --- Numbered list styling --- */
+.modal-list {
+  margin: 8px 0 0 20px;
+  padding: 0;
+}
+
+.modal-list li + li {
+  margin-top: 6px;
+}

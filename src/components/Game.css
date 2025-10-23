@@ -63,3 +63,28 @@
     display: flex;
     flex-wrap: wrap;
 }
+
+.game-root {
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  min-height: 100vh;
+  width: 100%;
+  position: relative;
+}
+
+.bg-toggle-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  background: rgba(255,255,255,0.9);
+}
+
+.bg-toggle-btn:hover {
+  background: white;
+}
