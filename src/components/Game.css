@@ -63,3 +63,105 @@
     display: flex;
     flex-wrap: wrap;
 }
+
+
+/* --- SETTINGS BUTTON --- */
+/* --- SETTINGS BUTTON --- */
+.settings-btn {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background-color: white;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  font-size: 22px;
+  display: flex;                /* ✅ จัดให้อยู่ตรงกลางแนวตั้งแนวนอน */
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  z-index: 200;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+  transition: background-color 0.2s ease;
+}
+
+.settings-btn:hover {
+  background-color: #005fa3;
+}
+
+
+/* --- SETTINGS PAGE OVERLAY --- */
+.settings-page {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(255, 255, 255, 0.6); 
+  backdrop-filter: blur(6px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999; /* make sure it's above boats or any game elements */
+}
+
+/* --- SETTINGS BOX --- */
+.settings-box {
+  background: white;
+  color: #0066cc; /* blue text */
+  padding: 40px 50px;
+  border-radius: 12px;
+  box-shadow: 0 0 15px rgba(0,0,0,0.2);
+  width: 400px;
+  text-align: center;
+}
+
+/* --- SETTING ITEM STYLING --- */
+.setting-item {
+  margin: 25px 0;
+  text-align: left;
+}
+
+.setting-item label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #0066cc;
+}
+
+.setting-item input[type="range"] {
+  width: 100%;
+  accent-color: #0066cc;
+}
+
+/* --- BUTTONS --- */
+button {
+  cursor: pointer;
+}
+
+.close-btn {
+  background-color: #0066cc;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 16px;
+  margin-top: 20px;
+}
+
+.close-btn:hover {
+  background-color: #004d99;
+}
+
+/* --- REMOVE BLINKING ANIMATION --- */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* If you want it static, remove the animation entirely */
+.settings-box {
+  animation: none; /* disables flicker */
+}
+

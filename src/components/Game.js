@@ -7,20 +7,15 @@ import DraggableShip, { ItemTypes } from './DraggableShip';
 import './Game.css';
 
 function Game(props) {
-  // accept either prop name to be tolerant of App.js variants
   const { gameState, nickname, shipSkin, selectedShipSkin } = props;
 
-  // normalize/resolve the skin to a usable URL string
   const resolveSkinUrl = (maybeModule) => {
     if (!maybeModule) return null;
-    // If bundler gave us an object like { default: '/static/media/ship...'} use that
     if (typeof maybeModule === 'object' && 'default' in maybeModule) return maybeModule.default;
-    // otherwise assume it's a string URL already
     return maybeModule;
   };
   const skinUrl = resolveSkinUrl(shipSkin ?? selectedShipSkin);
 
-  // --- Create ships using the resolved skin URL ---
   const createShips = (skin) => [
     { id: 1, length: 4, position: null, orientation: 'horizontal', image: skin },
     { id: 2, length: 4, position: null, orientation: 'horizontal', image: skin },
@@ -28,11 +23,9 @@ function Game(props) {
     { id: 4, length: 4, position: null, orientation: 'horizontal', image: skin },
   ];
 
-  // initialize with resolved skin
   const [myShips, setMyShips] = useState(() => createShips(skinUrl));
   const [isPlacementValid, setIsPlacementValid] = useState(false);
 
-  // find player data
   const myPlayerId = gameState?.players
     ? Object.keys(gameState.players).find((id) => gameState.players[id].nickname === nickname)
     : null;
@@ -42,15 +35,21 @@ function Game(props) {
   const fireSound = useRef(null);
   const bgMusic = useRef(null);
 
+  // --- Settings states ---
+  const [showSettings, setShowSettings] = useState(false);
+  const [fireVolume, setFireVolume] = useState(1);
+  const [bgVolume, setBgVolume] = useState(0.3);
+  const [fireMuted, setFireMuted] = useState(false);
+  const [bgMuted, setBgMuted] = useState(false);
+
   useEffect(() => {
     fireSound.current = new Audio('/sounds/fire.mp3');
     fireSound.current.preload = 'auto';
 
     bgMusic.current = new Audio('/sounds/bg_music.mp3');
     bgMusic.current.loop = true;
-    bgMusic.current.volume = 0.3;
+    bgMusic.current.volume = bgVolume;
     bgMusic.current.play().catch(() => {
-      // autoplay often blocked, not an error
       console.log('Background music blocked until user interaction.');
     });
 
@@ -62,15 +61,29 @@ function Game(props) {
     };
   }, []);
 
-  // If skinUrl changes, recreate ships so their `image` field updates
+  // apply volume and mute changes in real time
+  useEffect(() => {
+    if (fireSound.current) {
+      const normalizedVolume = Math.max(0, Math.min(1, fireVolume / 100)); // convert 0–100 → 0–1
+      fireSound.current.volume = fireMuted ? 0 : normalizedVolume;
+    }
+  }   , [fireVolume, fireMuted]);
+
+  useEffect(() => {
+    if (bgMusic.current) {
+        const normalizedVolume = Math.max(0, Math.min(1, bgVolume / 100)); // convert 0–100 → 0–1
+        bgMusic.current.volume = bgMuted ? 0 : normalizedVolume;
+    }
+  }, [bgVolume, bgMuted]);
+
+
   useEffect(() => {
     setMyShips(createShips(skinUrl));
     if (!skinUrl) {
-      console.warn('Game: ship skin URL is falsy. Verify that App passes an imported image or public URL.');
+      console.warn('Game: ship skin URL is falsy.');
     }
   }, [skinUrl]);
 
-  // --- placement validation ---
   const validateBoard = (ships) => {
     const placed = ships.filter((s) => s.position);
     if (placed.length !== 4) return false;
@@ -92,7 +105,6 @@ function Game(props) {
     setIsPlacementValid(validateBoard(myShips));
   }, [myShips]);
 
-  // Reset ships when entering placement or waiting (keeps skin applied)
   useEffect(() => {
     if (
       gameState?.gameStatus === 'waiting' ||
@@ -102,7 +114,6 @@ function Game(props) {
     }
   }, [gameState, me, skinUrl]);
 
-  // --- drag/drop & rotate handlers ---
   const handleShipDrop = (droppedShip, newPosition) => {
     setMyShips((ships) =>
       ships.map((s) => (s.id === droppedShip.id ? { ...s, position: newPosition } : s))
@@ -123,7 +134,6 @@ function Game(props) {
       setMyShips((ships) => ships.map((s) => (s.id === item.id ? { ...s, position: null } : s))),
   }));
 
-  // --- confirm placement ---
   const handleConfirmPlacement = () => {
     if (!isPlacementValid) {
       alert('Invalid placement! Make sure all 4 ships are on board and not overlapping.');
@@ -145,7 +155,6 @@ function Game(props) {
 
   const handleReadyForNextRound = () => socket.emit('ready-for-next-round');
 
-  // --- detect opponent fire for sound ---
   const prevGameState = useRef(null);
   useEffect(() => {
     if (!prevGameState.current || !gameState) {
@@ -175,14 +184,66 @@ function Game(props) {
     prevGameState.current = gameState;
   }, [gameState, myPlayerId]);
 
-  // --- RENDER ---
   if (!gameState || !me) return <div>Loading...</div>;
 
+  // --- SETTINGS MODAL ---
+const SettingsModal = () => (
+  <div className="settings-page">
+    <div className="settings-box">
+      <h1>⚙️ Game Sound Settings</h1>
+
+      <div className="setting-item">
+        <label>Fire Sound Volume: {fireMuted ? 'Muted' : `${fireVolume}%`}</label>
+        <input
+          type="range"
+          min="0"
+          max="100"
+          step="1"
+          value={fireVolume}
+          onChange={(e) => setFireVolume(Number(e.target.value))}
+        />
+        <button onClick={() => setFireMuted(!fireMuted)}>
+          {fireMuted ? 'Unmute' : 'Mute'}
+        </button>
+      </div>
+
+      <div className="setting-item">
+        <label>Background Music Volume: {bgMuted ? 'Muted' : `${bgVolume}%`}</label>
+        <input
+          type="range"
+          min="0"
+          max="100"
+          step="1"
+          value={bgVolume}
+          onChange={(e) => setBgVolume(Number(e.target.value))}
+        />
+        <button onClick={() => setBgMuted(!bgMuted)}>
+          {bgMuted ? 'Unmute' : 'Mute'}
+        </button>
+      </div>
+
+      <button className="close-btn" onClick={() => setShowSettings(false)}>
+        Close Settings
+      </button>
+    </div>
+  </div>
+);
+
+  // --- SETTINGS BUTTON ---
+const SettingsButton = () => (
+  <button className="settings-btn" onClick={() => setShowSettings(true)}>
+    ⚙️
+  </button>
+);
+
+  // --- Main rendering logic below ---
   if (gameState.gameStatus === 'waiting') {
     return (
       <div className="waiting-room">
+        <SettingsButton />
         <h2>Welcome, {nickname}!</h2>
         <h3>Waiting for another player to join...</h3>
+        {showSettings && <SettingsModal />}
       </div>
     );
   }
@@ -192,6 +253,9 @@ function Game(props) {
 
     return (
       <div className="placement-container">
+        <SettingsButton />
+        {showSettings && <SettingsModal />}
+
         <h3>Place Your Fleet (Click to rotate)</h3>
 
         <GameBoard
@@ -248,6 +312,9 @@ function Game(props) {
       const winnerName = gameState.players[gameState.winner]?.nickname;
       return (
         <div className="game-over">
+          <SettingsButton />
+          {showSettings && <SettingsModal />}
+
           <h1>Round Over!</h1>
           <h2>Winner: {winnerName}</h2>
           <h3>
@@ -266,6 +333,9 @@ function Game(props) {
       const winnerName = gameState.players[gameState.winner]?.nickname;
       return (
         <div className="game-over">
+          <SettingsButton />
+          {showSettings && <SettingsModal />}
+
           <h1>MATCH OVER!</h1>
           <h2>FINAL WINNER: {winnerName}</h2>
           <h3>
@@ -278,6 +348,9 @@ function Game(props) {
     if (gameState.gameStatus === 'playing') {
       return (
         <div className="playing-container">
+          <SettingsButton />
+          {showSettings && <SettingsModal />}
+
           <div className="turn-indicator">
             <h2 className={isMyTurn ? 'my-turn' : ''}>
               {isMyTurn ? '🔥 Your Turn!' : `Waiting for ${opponent?.nickname}...`}
