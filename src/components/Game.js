@@ -5,6 +5,11 @@ import { socket } from '../socket';
 import GameBoard from './GameBoard';
 import DraggableShip, { ItemTypes } from './DraggableShip';
 import './Game.css';
+import bg1 from '../assets/bg1.jpg';
+import bg2 from '../assets/bg2.jpg';
+import bg3 from '../assets/bg3.jpg';
+import bg4 from '../assets/bg4.jpg';
+import bg5 from '../assets/bg5.jpg';
 
 function Game(props) {
   // accept either prop name to be tolerant of App.js variants
@@ -28,8 +33,9 @@ function Game(props) {
     { id: 4, length: 4, position: null, orientation: 'horizontal', image: skin },
   ];
 
-  // initialize with resolved skin
-  const [myShips, setMyShips] = useState(() => createShips(skinUrl));
+
+function Game({ gameState, nickname }) {
+  const [myShips, setMyShips] = useState(initialShips);
   const [isPlacementValid, setIsPlacementValid] = useState(false);
 
   // find player data
@@ -192,22 +198,15 @@ function Game(props) {
 
     return (
       <div className="placement-container">
-        <h3>Place Your Fleet (Click to rotate)</h3>
-
+        <h3>Place Your Fleet (Click ship to rotate)</h3>
         <GameBoard
-          ships={myShips.filter((s) => s.position)}
+          ships={myShips.filter(s => s.position !== null)}
           onDropShip={handleShipDrop}
           onRotateShip={handleRotateShip}
         />
-
         <div className="ship-palette" ref={dropPalette}>
-          {myShips
-            .filter((s) => s.position === null)
-            .map((s) => (
-              <DraggableShip key={s.id} ship={s} onClick={handleRotateShip} />
-            ))}
+          {myShips.filter(s => s.position === null).map(s => <DraggableShip key={s.id} ship={s} onClick={handleRotateShip} />)}
         </div>
-
         <button onClick={handleConfirmPlacement} disabled={!isPlacementValid}>
           Confirm Placement
         </button>
@@ -274,34 +273,39 @@ function Game(props) {
         </div>
       );
     }
+    
 
     if (gameState.gameStatus === 'playing') {
-      return (
-        <div className="playing-container">
-          <div className="turn-indicator">
-            <h2 className={isMyTurn ? 'my-turn' : ''}>
-              {isMyTurn ? '🔥 Your Turn!' : `Waiting for ${opponent?.nickname}...`}
-            </h2>
-            <div className="timer">Time Left: {gameState.timer}</div>
-          </div>
+        return (
+            <div className="playing-container">
+                <div className="turn-indicator">
+                    <h2 className={isMyTurn ? 'my-turn' : ''}> {isMyTurn ? "🔥 Your Turn!" : `Waiting for ${opponent?.nickname}'s turn...`} </h2>
+                    <div className="timer">Time Left: {gameState.timer}</div>
+                </div>
+                <div className="boards-container">
+                  <div className="board-area">
+                    <h3>Your Board (Score: {me.score})</h3>
+                    <GameBoard
+                      ships={myShips.filter(s => s.position)} // show your ships with image
+                      boardData={myDisplayBoard}
+                    />
+                  </div>
 
-          <div className="boards-container">
-            <div className="board-area">
-              <h3>Your Board (Score: {me.score})</h3>
-              <GameBoard ships={myShips.filter((s) => s.position)} boardData={myDisplayBoard} />
+                  <div className="board-area">
+                    <h3>{opponent?.nickname}'s Board (Score: {opponent?.score || 0})</h3>
+                    {opponent ? (
+                      <GameBoard
+                        ships={[]} // 👈 opponent ships hidden
+                        onCellClick={handleFire}
+                        boardData={opponent.gameBoard}
+                      />
+                    ) : (
+                      <p>Waiting...</p>
+                    )}
+                  </div>
+                </div>
             </div>
-
-            <div className="board-area">
-              <h3>{opponent?.nickname}'s Board (Score: {opponent?.score || 0})</h3>
-              {opponent ? (
-                <GameBoard ships={[]} onCellClick={handleFire} boardData={opponent.gameBoard} />
-              ) : (
-                <p>Waiting...</p>
-              )}
-            </div>
-          </div>
-        </div>
-      );
+        );
     }
   }
 
