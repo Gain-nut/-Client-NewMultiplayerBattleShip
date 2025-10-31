@@ -4,6 +4,7 @@ import { useDrop } from 'react-dnd';
 import { socket } from '../socket';
 import GameBoard from './GameBoard';
 import DraggableShip, { ItemTypes } from './DraggableShip';
+import EmojiPicker from './EmojiPicker';
 import './Game.css';
 import bg1 from '../assets/bg1.jpg';
 import bg2 from '../assets/bg2.jpg';
@@ -14,6 +15,46 @@ import bg5 from '../assets/bg5.jpg';
 function Game(props) {
   // accept either prop name to be tolerant of App.js variants
   const { gameState, nickname, shipSkin, selectedShipSkin } = props;
+
+  // emoji reactions that appear on the board (shared)
+  const [emojis, setEmojis] = useState([]); // { id, emoji, from, createdAt }
+  const emojiIdRef = useRef(1);
+
+  useEffect(() => {   
+    const onEmoji = (data) => {
+      // server broadcast: { emoji, from }
+      const id = emojiIdRef.current++;
+      setEmojis((prev) => [
+        ...prev,
+        { id, emoji: data.emoji, from: data.from, createdAt: Date.now() },
+      ]);
+
+      // auto-remove after 3s
+      setTimeout(() => {
+        setEmojis((prev) => prev.filter((e) => e.id !== id));
+      }, 3000);
+    };
+
+    socket.on('emoji', onEmoji);
+    return () => socket.off('emoji', onEmoji);
+  }, []);
+
+  const sendEmoji = (emoji) => {
+    const id = emojiIdRef.current++;
+    // Optimistic local display
+    setEmojis((prev) => [
+      ...prev,
+      { id, emoji, from: nickname, createdAt: Date.now() },
+    ]);
+
+    setTimeout(() => {
+      setEmojis((prev) => prev.filter((e) => e.id !== id));
+    }, 3000);
+
+    // Send to server
+    socket.emit('emoji', { emoji, from: nickname });
+  };
+  
 
   // normalize/resolve the skin to a usable URL string
   const resolveSkinUrl = (maybeModule) => {
@@ -215,6 +256,7 @@ function Game(props) {
           ships={myShips.filter(s => s.position !== null)}
           onDropShip={handleShipDrop}
           onRotateShip={handleRotateShip}
+          emojis={emojis}
         />
         <div className="ship-palette" ref={dropPalette}>
           {myShips.filter(s => s.position === null).map(s => <DraggableShip key={s.id} ship={s} onClick={handleRotateShip} />)}
