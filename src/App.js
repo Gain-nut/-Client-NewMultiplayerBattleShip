@@ -4,6 +4,7 @@ import { HTML5Backend } from 'react-dnd-html5-backend';
 import { socket } from './socket';
 import NicknameForm from './components/NicknameForm';
 import Game from './components/Game';
+import { useNavigate } from 'react-router-dom';
 
 import shipRed from './assets/shipRed.png';
 import shipBlue from './assets/shipBlue.png';
@@ -16,6 +17,8 @@ function App() {
   const [nickname, setNickname] = useState('');
   const [isConnected, setIsConnected] = useState(socket.connected);
   const [gameState, setGameState] = useState(null);
+  
+
 
   // ✅ Ship skins
   const availableShips = [shipRed, shipBlue, shipGreen, shipYellow];
@@ -37,6 +40,25 @@ function App() {
       socket.off('update-game-state', onUpdateGameState);
     };
   }, []);
+
+  // handle disconnect
+const [disconnectMessage, setDisconnectMessage] = useState('');
+const [showDisconnectPopup, setShowDisconnectPopup] = useState(false);
+
+const handlePlayerDisconnect = (disconnectedPlayer) => {
+  // สร้างข้อความ
+  const msg = disconnectedPlayer
+    ? `Opponent disconnected!`
+    : "Opponent disconnected!";
+
+  setDisconnectMessage(msg);   // เก็บข้อความ
+  setShowDisconnectPopup(true); // เปิด popup
+  setGameState(null);
+  setNickname("");              // กลับหน้าแรก
+};
+
+
+
 
   const handleSetNickname = (nick) => {
     if (nick) setNickname(nick);
@@ -65,6 +87,7 @@ function App() {
       prev === availableShips.length - 1 ? 0 : prev + 1
     );
   };
+
 
   return (
     <DndProvider backend={HTML5Backend}>
@@ -103,9 +126,18 @@ function App() {
               gameState={gameState}
               nickname={nickname}
               selectedShipSkin={selectedShipSkin}
+              onPlayerDisconnect={handlePlayerDisconnect} 
             />
           )}
         </main>
+        {showDisconnectPopup && (
+        <div className="disconnect-popup">
+          <div className="popup-content">
+            <p>{disconnectMessage}</p>
+            <button onClick={() => setShowDisconnectPopup(false)}>OK</button>
+          </div>
+        </div>
+      )}
       </div>
     </DndProvider>
   );

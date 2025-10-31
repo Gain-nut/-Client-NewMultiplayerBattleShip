@@ -7,8 +7,8 @@ import DraggableShip, { ItemTypes } from './DraggableShip';
 import './Game.css';
 
 function Game(props) {
-  const { gameState, nickname, shipSkin, selectedShipSkin } = props;
-
+  const { gameState, nickname, shipSkin, selectedShipSkin, onPlayerDisconnect } = props;
+      
   const resolveSkinUrl = (maybeModule) => {
     if (!maybeModule) return null;
     if (typeof maybeModule === 'object' && 'default' in maybeModule) return maybeModule.default;
@@ -42,6 +42,27 @@ function Game(props) {
   const [fireMuted, setFireMuted] = useState(false);
   const [bgMuted, setBgMuted] = useState(false);
 
+  // PLayer ID
+const [playerId, setPlayerId] = useState(null);
+
+  //Player disconnect
+  const [disconnectMessage, setDisconnectMessage] = useState('');
+  
+  // --- Surrender states ---
+const [showSurrenderWarning, setShowSurrenderWarning] = useState(false);
+
+const handleSurrenderConfirm = () => {
+  socket.emit('surrender', { playerId: myPlayerId });
+  setShowSurrenderWarning(false);
+  setShowSettings(false);
+};
+
+
+const handleSurrenderCancel = () => {
+  setShowSurrenderWarning(false);
+};
+
+
   useEffect(() => {
     fireSound.current = new Audio('/sounds/fire.mp3');
     fireSound.current.preload = 'auto';
@@ -61,6 +82,48 @@ function Game(props) {
     };
   }, []);
 
+
+
+  // Disconnect2
+  useEffect(() => {
+  const handleDisconnect = (disconnectedPlayer) => {
+    if (disconnectedPlayer !== nickname) {
+      onPlayerDisconnect(disconnectedPlayer);
+    }
+  };
+
+  socket.on("player-disconnect", handleDisconnect);
+
+  return () => {
+    socket.off("player-disconnect", handleDisconnect);
+  };
+}, [nickname, onPlayerDisconnect]);
+
+
+
+  // useEffect ตรวจสอบว่าเกมจบและเราชนะ(Player Discon)
+// Game.js (แทนที่บรรทัด 88-103 เดิม)
+useEffect(() => {
+  if (!gameState || !myPlayerId) return;
+
+  // ตรวจสอบว่าเกมจบ และเราเป็นผู้ชนะหรือไม่
+  if (gameState.gameStatus === 'gameover' && gameState.winner === myPlayerId) {
+  // ตรวจสอบ "เหตุผล" ที่เราชนะ
+    if (gameState.gameOverReason === 'disconnect') {
+      setDisconnectMessage('Your opponent disconnected. You win this round by default!');
+    } else if (gameState.gameOverReason === 'surrender') {
+      setDisconnectMessage('Your opponent surrendered. You win this round!');
+    } else {
+    // ถ้าชนะแบบปกติ (เช่น ยิงเรือหมด) ก็ไม่ต้องแสดงข้อความพิเศษ
+      setDisconnectMessage('');
+    }
+
+  } else {
+    // ถ้าเกมยังไม่จบ หรือเราไม่ได้ชนะ ก็ล้างข้อความทิ้ง
+    setDisconnectMessage('');
+  }
+}, [gameState, myPlayerId]); // <-- dependencies เหมือนเดิม
+
   // apply volume and mute changes in real time
   useEffect(() => {
     if (fireSound.current) {
@@ -68,6 +131,18 @@ function Game(props) {
       fireSound.current.volume = fireMuted ? 0 : normalizedVolume;
     }
   }   , [fireVolume, fireMuted]);
+
+  // --- Listen for server event when player successfully joins the game ---
+useEffect(() => {
+  socket.on('join-success', ({ playerId, nickname }) => {
+    setPlayerId(playerId);
+    console.log(`Joined as ${nickname} (ID: ${playerId})`);
+  });
+  return () => {
+    socket.off('join-success');
+  };
+}, []); 
+
 
   useEffect(() => {
     if (bgMusic.current) {
@@ -186,7 +261,7 @@ function Game(props) {
 
   if (!gameState || !me) return <div>Loading...</div>;
 
-  // --- SETTINGS MODAL ---
+// --- SETTINGS MODAL ---
 const SettingsModal = () => (
   <div className="settings-page">
     <div className="settings-box">
@@ -222,12 +297,32 @@ const SettingsModal = () => (
         </button>
       </div>
 
-      <button className="close-btn" onClick={() => setShowSettings(false)}>
-        Close Settings
-      </button>
+      <div className="settings-buttons">
+        <button className="surrender-btn" onClick={() => setShowSurrenderWarning(true)}>
+          🏳️ Surrender
+        </button>
+        <button className="close-btn" onClick={() => setShowSettings(false)}>
+          Close Settings
+        </button>
+      </div>
     </div>
   </div>
 );
+
+// --- SURRENDER WARNING POPUP ---
+const SurrenderWarning = () => (
+  <div className="warning-page">
+    <div className="warning-box">
+      <h2>Are you sure you want to surrender?</h2>
+      <p>You will lose this round immediately.</p>
+      <div className="warning-buttons">
+        <button className="cancel-btn" onClick={handleSurrenderCancel}>Cancel</button>
+        <button className="confirm-btn" onClick={handleSurrenderConfirm}>Yes, Surrender</button>
+      </div>
+    </div>
+  </div>
+);
+
 
   // --- SETTINGS BUTTON ---
 const SettingsButton = () => (
@@ -244,6 +339,8 @@ const SettingsButton = () => (
         <h2>Welcome, {nickname}!</h2>
         <h3>Waiting for another player to join...</h3>
         {showSettings && <SettingsModal />}
+        {showSurrenderWarning && <SurrenderWarning />}
+
       </div>
     );
   }
@@ -255,6 +352,8 @@ const SettingsButton = () => (
       <div className="placement-container">
         <SettingsButton />
         {showSettings && <SettingsModal />}
+        {showSurrenderWarning && <SurrenderWarning />}
+
 
         <h3>Place Your Fleet (Click to rotate)</h3>
 
@@ -309,25 +408,29 @@ const SettingsButton = () => (
     };
 
     if (gameState.gameStatus === 'gameover') {
-      const winnerName = gameState.players[gameState.winner]?.nickname;
-      return (
-        <div className="game-over">
-          <SettingsButton />
-          {showSettings && <SettingsModal />}
+  const winnerName = gameState.players[gameState.winner]?.nickname;
+  return (
+    <div className="game-over">
+      <SettingsButton />
+      {showSettings && <SettingsModal />}
+      {showSurrenderWarning && <SurrenderWarning />}
 
-          <h1>Round Over!</h1>
-          <h2>Winner: {winnerName}</h2>
-          <h3>
-            Score: {me.nickname} {me.score} - {opponent?.nickname} {opponent?.score}
-          </h3>
-          {me.readyForNextRound ? (
-            <p>Waiting for opponent...</p>
-          ) : (
-            <button onClick={handleReadyForNextRound}>Ready for Next Round</button>
-          )}
-        </div>
-      );
-    }
+      <h1>Round Over!</h1>
+      <h2>Winner: {winnerName}</h2>
+      {disconnectMessage && (
+        <p className="disconnect-message">{disconnectMessage}</p>
+      )}
+      <h3>
+        Score: {me.nickname} {me.score} - {opponent?.nickname} {opponent?.score}
+      </h3>
+      {me.readyForNextRound ? (
+        <p>Waiting for opponent...</p>
+      ) : (
+        <button onClick={handleReadyForNextRound}>Ready for Next Round</button>
+      )}
+    </div>
+  );
+}
 
     if (gameState.gameStatus === 'matchover') {
       const winnerName = gameState.players[gameState.winner]?.nickname;
@@ -335,6 +438,8 @@ const SettingsButton = () => (
         <div className="game-over">
           <SettingsButton />
           {showSettings && <SettingsModal />}
+          {showSurrenderWarning && <SurrenderWarning />}
+
 
           <h1>MATCH OVER!</h1>
           <h2>FINAL WINNER: {winnerName}</h2>
@@ -350,6 +455,8 @@ const SettingsButton = () => (
         <div className="playing-container">
           <SettingsButton />
           {showSettings && <SettingsModal />}
+          {showSurrenderWarning && <SurrenderWarning />}
+
 
           <div className="turn-indicator">
             <h2 className={isMyTurn ? 'my-turn' : ''}>

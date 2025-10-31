@@ -267,3 +267,10 @@ button {
   cursor: pointer;
   font-weight: bold;
 }
+
+.disconnect-message {
+  color: orange;
+  font-weight: bold;
+  margin-top: 1rem;
+}
+
