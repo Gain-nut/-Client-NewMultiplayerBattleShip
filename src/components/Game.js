@@ -33,9 +33,13 @@ function Game(props) {
     { id: 4, length: 4, position: null, orientation: 'horizontal', image: skin },
   ];
 
-
-function Game({ gameState, nickname }) {
-  const [myShips, setMyShips] = useState(initialShips);
+  const [bgIndex, setBgIndex] = React.useState(0);
+  const backgrounds = [null, bg1, bg2, bg3, bg4, bg5];
+  const bgStyle = backgrounds[bgIndex]
+    ? { backgroundImage: `url(${backgrounds[bgIndex]})` }
+    : {};
+  // initialize with resolved skin
+  const [myShips, setMyShips] = useState(() => createShips(skinUrl));
   const [isPlacementValid, setIsPlacementValid] = useState(false);
 
   // find player data
@@ -197,6 +201,14 @@ function Game({ gameState, nickname }) {
     if (me.ships.length > 0) return <h2>Waiting for opponent to finish placing...</h2>;
 
     return (
+      <div className="game-root" style={bgStyle}>
+        <button
+          className="bg-toggle-btn"
+          onClick={() => setBgIndex((bgIndex + 1) % backgrounds.length)}
+          title="Change background"
+        >
+          Change BG
+        </button>
       <div className="placement-container">
         <h3>Place Your Fleet (Click ship to rotate)</h3>
         <GameBoard
@@ -210,6 +222,7 @@ function Game({ gameState, nickname }) {
         <button onClick={handleConfirmPlacement} disabled={!isPlacementValid}>
           Confirm Placement
         </button>
+      </div>
       </div>
     );
   }
@@ -277,6 +290,14 @@ function Game({ gameState, nickname }) {
 
     if (gameState.gameStatus === 'playing') {
         return (
+          <div className="game-root" style={bgStyle}>
+          <button
+            className="bg-toggle-btn"
+            onClick={() => setBgIndex((bgIndex + 1) % backgrounds.length)}
+            title="Change background"
+          >
+            Change BG
+          </button>
             <div className="playing-container">
                 <div className="turn-indicator">
                     <h2 className={isMyTurn ? 'my-turn' : ''}> {isMyTurn ? "🔥 Your Turn!" : `Waiting for ${opponent?.nickname}'s turn...`} </h2>
@@ -304,6 +325,7 @@ function Game({ gameState, nickname }) {
                     )}
                   </div>
                 </div>
+            </div>
             </div>
         );
     }
