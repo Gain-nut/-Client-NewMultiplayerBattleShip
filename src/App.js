@@ -49,7 +49,7 @@ const handlePlayerDisconnect = (disconnectedPlayer) => {
   // สร้างข้อความ
   const msg = disconnectedPlayer
     ? `Opponent disconnected!`
-    : "Opponent disconnected!";
+    : "Opponent disconnected! Please fill in your previous name";
 
   setDisconnectMessage(msg);   // เก็บข้อความ
   setShowDisconnectPopup(true); // เปิด popup
