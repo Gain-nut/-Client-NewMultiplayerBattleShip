@@ -28,6 +28,7 @@ const GameBoard = ({
   onRotateShip,
   boardData = Array(BOARD_SIZE).fill(Array(BOARD_SIZE).fill(null)),
   onCellClick = () => {},
+  emojis = [],
 }) => {
   const [hoveredCells, setHoveredCells] = useState([]);
   const boardRef = useRef(null);
@@ -157,6 +158,16 @@ const GameBoard = ({
           <DraggableShip ship={ship} onClick={onRotateShip} />
         </div>
       ))}
+    {/* Emoji overlay (shared reactions) */}
+      {emojis && emojis.length > 0 && (
+        <div className="emoji-overlay">
+          {emojis.map(e => (
+            <div key={e.id} className="emoji-pop" title={e.from}>
+              {e.emoji}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

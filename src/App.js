@@ -16,6 +16,7 @@ function App() {
   const [nickname, setNickname] = useState('');
   const [isConnected, setIsConnected] = useState(socket.connected);
   const [gameState, setGameState] = useState(null);
+  const [playerId, setPlayerId] = useState(null);
 
   // ✅ Ship skins
   const availableShips = [shipRed, shipBlue, shipGreen, shipYellow];
@@ -49,10 +50,10 @@ function App() {
     }
   };
 
-  const hasJoinedGame =
-    gameState?.players &&
-    Object.values(gameState.players).some((p) => p.nickname === nickname);
-
+  // const hasJoinedGame =
+  //   gameState?.players &&
+  //   Object.values(gameState.players).some((p) => p.nickname === nickname);
+  const hasJoinedGame = !!gameState?.players?.[socket.id];
   // ✅ Change ship skin
   const prevSkin = () => {
     setSelectedShipIndex((prev) =>

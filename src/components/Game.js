@@ -13,9 +13,10 @@ import bg4 from '../assets/bg4.jpg';
 import bg5 from '../assets/bg5.jpg';
 
 function Game(props) {
-  // accept either prop name to be tolerant of App.js variants
-  const { gameState, nickname, shipSkin, selectedShipSkin } = props;
-
+  const { gameState, nickname, shipSkin, selectedShipSkin} = props;
+  const myId = socket.id;
+  const me = gameState?.players?.[myId] || null;
+  
   // emoji reactions that appear on the board (shared)
   const [emojis, setEmojis] = useState([]); // { id, emoji, from, createdAt }
   const emojiIdRef = useRef(1);
@@ -39,21 +40,29 @@ function Game(props) {
     return () => socket.off('emoji', onEmoji);
   }, []);
 
-  const sendEmoji = (emoji) => {
-    const id = emojiIdRef.current++;
-    // Optimistic local display
-    setEmojis((prev) => [
-      ...prev,
-      { id, emoji, from: nickname, createdAt: Date.now() },
-    ]);
+  // Control how long the emoji stays and how fast users can send
+const EMOJI_DURATION_MS = 2200;     // how long it stays visible 
+const EMOJI_COOLDOWN_MS = 2200;     // how often user can send 
+const lastEmojiAtRef = useRef(0);
 
-    setTimeout(() => {
-      setEmojis((prev) => prev.filter((e) => e.id !== id));
-    }, 3000);
+const sendEmoji = (emoji) => {
+  const now = Date.now();
+  if (now - lastEmojiAtRef.current < EMOJI_COOLDOWN_MS) return; // ignore spam
+  lastEmojiAtRef.current = now;
 
-    // Send to server
-    socket.emit('emoji', { emoji, from: nickname });
-  };
+  const id = emojiIdRef.current++;
+  setEmojis((prev) => [
+    ...prev,
+    { id, emoji, from: nickname, createdAt: now },
+  ]);
+
+  setTimeout(() => {
+    setEmojis((prev) => prev.filter((e) => e.id !== id));
+  }, EMOJI_DURATION_MS);
+
+  socket.emit('emoji', { emoji, from: nickname });
+};
+
   
 
   // normalize/resolve the skin to a usable URL string
@@ -84,11 +93,10 @@ function Game(props) {
   const [isPlacementValid, setIsPlacementValid] = useState(false);
 
   // find player data
-  const myPlayerId = gameState?.players
-    ? Object.keys(gameState.players).find((id) => gameState.players[id].nickname === nickname)
-    : null;
-  const me = myPlayerId ? gameState.players[myPlayerId] : null;
-
+  // const myPlayerId = gameState?.players
+  //   ? Object.keys(gameState.players).find((id) => gameState.players[id].nickname === nickname)
+  //   : null;
+  // const me = myPlayerId ? gameState.players[myPlayerId] : null;
   // --- Audio refs ---
   const fireSound = useRef(null);
   const bgMusic = useRef(null);
@@ -144,14 +152,24 @@ function Game(props) {
   }, [myShips]);
 
   // Reset ships when entering placement or waiting (keeps skin applied)
-  useEffect(() => {
-    if (
-      gameState?.gameStatus === 'waiting' ||
-      (gameState?.gameStatus === 'placing' && me?.ships.length === 0)
-    ) {
-      setMyShips(createShips(skinUrl));
-    }
-  }, [gameState, me, skinUrl]);
+  // useEffect(() => {
+  //   if (
+  //     gameState?.gameStatus === 'waiting' ||
+  //     (gameState?.gameStatus === 'placing' && me?.ships.length === 0)
+  //   ) {
+  //     setMyShips(createShips(skinUrl));
+  //   }
+  // }, [gameState, me, skinUrl]);
+const phaseRef = useRef(null);
+useEffect(() => {
+  const phase = gameState?.gameStatus;
+  const prev = phaseRef.current;
+  const enteringPlacing = phase === 'placing' && prev !== 'placing';
+  const enteringWaiting = phase === 'waiting' && prev !== 'waiting';
+  if (enteringPlacing || enteringWaiting) {
+    setMyShips(createShips(skinUrl));
+  }  phaseRef.current = phase;
+}, [gameState?.gameStatus, skinUrl]);
 
   // --- drag/drop & rotate handlers ---
   const handleShipDrop = (droppedShip, newPosition) => {
@@ -205,7 +223,7 @@ function Game(props) {
     }
 
     if (gameState.gameStatus === 'playing') {
-      const opponentId = Object.keys(gameState.players).find((id) => id !== myPlayerId);
+      const opponentId = Object.keys(gameState.players).find((id) => id !== myId);
       const oppNow = gameState.players[opponentId];
       const oppPrev = prevGameState.current.players[opponentId];
 
@@ -224,7 +242,7 @@ function Game(props) {
     }
 
     prevGameState.current = gameState;
-  }, [gameState, myPlayerId]);
+  }, [gameState, myId]);
 
   // --- RENDER ---
   if (!gameState || !me) return <div>Loading...</div>;
@@ -239,8 +257,8 @@ function Game(props) {
   }
 
   if (gameState.gameStatus === 'placing') {
+    // if (me.ships.length > 0) return <h2>Waiting for opponent to finish placing...</h2>;
     if (me.ships.length > 0) return <h2>Waiting for opponent to finish placing...</h2>;
-
     return (
       <div className="game-root" style={bgStyle}>
         <button
@@ -261,6 +279,12 @@ function Game(props) {
         <div className="ship-palette" ref={dropPalette}>
           {myShips.filter(s => s.position === null).map(s => <DraggableShip key={s.id} ship={s} onClick={handleRotateShip} />)}
         </div>
+
+        {/* Emoji picker so user can send reactions during placement */} 
+          <div className="emoji-dock">
+            <EmojiPicker onSelect={sendEmoji} />
+          </div>
+
         <button onClick={handleConfirmPlacement} disabled={!isPlacementValid}>
           Confirm Placement
         </button>
@@ -270,9 +294,11 @@ function Game(props) {
   }
 
   if (['playing', 'gameover', 'matchover'].includes(gameState.gameStatus)) {
-    const opponentId = Object.keys(gameState.players).find((id) => id !== myPlayerId);
+    //const opponentId = Object.keys(gameState.players).find((id) => id !== myPlayerId);
+    const opponentId = Object.keys(gameState.players).find((id) => id !== myId);
     const opponent = opponentId ? gameState.players[opponentId] : null;
-    const isMyTurn = gameState.currentPlayerTurn === myPlayerId;
+    //const isMyTurn = gameState.currentPlayerTurn === myPlayerId;
+    const isMyTurn = gameState.currentPlayerTurn === myId;
 
     const myDisplayBoard = Array(8)
       .fill(null)
@@ -351,6 +377,7 @@ function Game(props) {
                     <GameBoard
                       ships={myShips.filter(s => s.position)} // show your ships with image
                       boardData={myDisplayBoard}
+                      emojis={emojis} 
                     />
                   </div>
 
@@ -361,14 +388,20 @@ function Game(props) {
                         ships={[]} // 👈 opponent ships hidden
                         onCellClick={handleFire}
                         boardData={opponent.gameBoard}
+                        emojis={emojis}  
                       />
                     ) : (
                       <p>Waiting...</p>
                     )}
                   </div>
                 </div>
+
+              {/* Emoji picker so players can react during play */}
+            <div className="emoji-dock">
+              <EmojiPicker onSelect={sendEmoji} />
             </div>
-            </div>
+          </div>
+          </div>
         );
     }
   }
