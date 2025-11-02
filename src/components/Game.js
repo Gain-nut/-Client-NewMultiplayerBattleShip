@@ -115,7 +115,7 @@ const [playerId, setPlayerId] = useState(null);
 const [showSurrenderWarning, setShowSurrenderWarning] = useState(false);
 
 const handleSurrenderConfirm = () => {
-  socket.emit('surrender', { playerId: myPlayerId });
+  socket.emit('surrender', { playerId: myId });
   setShowSurrenderWarning(false);
   setShowSettings(false);
 };
@@ -167,10 +167,10 @@ const handleSurrenderCancel = () => {
   // useEffect ตรวจสอบว่าเกมจบและเราชนะ(Player Discon)
 // Game.js (แทนที่บรรทัด 88-103 เดิม)
 useEffect(() => {
-  if (!gameState || !myPlayerId) return;
+  if (!gameState || !myId) return;
 
   // ตรวจสอบว่าเกมจบ และเราเป็นผู้ชนะหรือไม่
-  if (gameState.gameStatus === 'gameover' && gameState.winner === myPlayerId) {
+  if (gameState.gameStatus === 'gameover' && gameState.winner === myId) {
   // ตรวจสอบ "เหตุผล" ที่เราชนะ
     if (gameState.gameOverReason === 'disconnect') {
       setDisconnectMessage('Your opponent disconnected. You win this round by default!');
@@ -185,7 +185,7 @@ useEffect(() => {
     // ถ้าเกมยังไม่จบ หรือเราไม่ได้ชนะ ก็ล้างข้อความทิ้ง
     setDisconnectMessage('');
   }
-}, [gameState, myPlayerId]); // <-- dependencies เหมือนเดิม
+}, [gameState, myId]); // <-- dependencies เหมือนเดิม
 
   // apply volume and mute changes in real time
   useEffect(() => {
