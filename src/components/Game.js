@@ -13,7 +13,7 @@ import bg4 from '../assets/bg4.jpg';
 import bg5 from '../assets/bg5.jpg';
 
 function Game(props) {
-  const { gameState, nickname, shipSkin, selectedShipSkin} = props;
+  const { gameState, nickname, shipSkin, selectedShipSkin, onPlayerDisconnect} = props;
   const myId = socket.id;
   const me = gameState?.players?.[myId] || null;
   
@@ -68,14 +68,11 @@ const sendEmoji = (emoji) => {
   // normalize/resolve the skin to a usable URL string
   const resolveSkinUrl = (maybeModule) => {
     if (!maybeModule) return null;
-    // If bundler gave us an object like { default: '/static/media/ship...'} use that
     if (typeof maybeModule === 'object' && 'default' in maybeModule) return maybeModule.default;
-    // otherwise assume it's a string URL already
     return maybeModule;
   };
   const skinUrl = resolveSkinUrl(shipSkin ?? selectedShipSkin);
 
-  // --- Create ships using the resolved skin URL ---
   const createShips = (skin) => [
     { id: 1, length: 4, position: null, orientation: 'horizontal', image: skin },
     { id: 2, length: 4, position: null, orientation: 'horizontal', image: skin },
@@ -101,15 +98,42 @@ const sendEmoji = (emoji) => {
   const fireSound = useRef(null);
   const bgMusic = useRef(null);
 
+  // --- Settings states ---
+  const [showSettings, setShowSettings] = useState(false);
+  const [fireVolume, setFireVolume] = useState(1);
+  const [bgVolume, setBgVolume] = useState(0.3);
+  const [fireMuted, setFireMuted] = useState(false);
+  const [bgMuted, setBgMuted] = useState(false);
+
+  // PLayer ID
+const [playerId, setPlayerId] = useState(null);
+
+  //Player disconnect
+  const [disconnectMessage, setDisconnectMessage] = useState('');
+  
+  // --- Surrender states ---
+const [showSurrenderWarning, setShowSurrenderWarning] = useState(false);
+
+const handleSurrenderConfirm = () => {
+  socket.emit('surrender', { playerId: myPlayerId });
+  setShowSurrenderWarning(false);
+  setShowSettings(false);
+};
+
+
+const handleSurrenderCancel = () => {
+  setShowSurrenderWarning(false);
+};
+
+
   useEffect(() => {
     fireSound.current = new Audio('/sounds/fire.mp3');
     fireSound.current.preload = 'auto';
 
     bgMusic.current = new Audio('/sounds/bg_music.mp3');
     bgMusic.current.loop = true;
-    bgMusic.current.volume = 0.3;
+    bgMusic.current.volume = bgVolume;
     bgMusic.current.play().catch(() => {
-      // autoplay often blocked, not an error
       console.log('Background music blocked until user interaction.');
     });
 
@@ -121,15 +145,83 @@ const sendEmoji = (emoji) => {
     };
   }, []);
 
-  // If skinUrl changes, recreate ships so their `image` field updates
+
+
+  // Disconnect2
+  useEffect(() => {
+  const handleDisconnect = (disconnectedPlayer) => {
+    if (disconnectedPlayer !== nickname) {
+      onPlayerDisconnect(disconnectedPlayer);
+    }
+  };
+
+  socket.on("player-disconnect", handleDisconnect);
+
+  return () => {
+    socket.off("player-disconnect", handleDisconnect);
+  };
+}, [nickname, onPlayerDisconnect]);
+
+
+
+  // useEffect ตรวจสอบว่าเกมจบและเราชนะ(Player Discon)
+// Game.js (แทนที่บรรทัด 88-103 เดิม)
+useEffect(() => {
+  if (!gameState || !myPlayerId) return;
+
+  // ตรวจสอบว่าเกมจบ และเราเป็นผู้ชนะหรือไม่
+  if (gameState.gameStatus === 'gameover' && gameState.winner === myPlayerId) {
+  // ตรวจสอบ "เหตุผล" ที่เราชนะ
+    if (gameState.gameOverReason === 'disconnect') {
+      setDisconnectMessage('Your opponent disconnected. You win this round by default!');
+    } else if (gameState.gameOverReason === 'surrender') {
+      setDisconnectMessage('Your opponent surrendered. You win this round!');
+    } else {
+    // ถ้าชนะแบบปกติ (เช่น ยิงเรือหมด) ก็ไม่ต้องแสดงข้อความพิเศษ
+      setDisconnectMessage('');
+    }
+
+  } else {
+    // ถ้าเกมยังไม่จบ หรือเราไม่ได้ชนะ ก็ล้างข้อความทิ้ง
+    setDisconnectMessage('');
+  }
+}, [gameState, myPlayerId]); // <-- dependencies เหมือนเดิม
+
+  // apply volume and mute changes in real time
+  useEffect(() => {
+    if (fireSound.current) {
+      const normalizedVolume = Math.max(0, Math.min(1, fireVolume / 100)); // convert 0–100 → 0–1
+      fireSound.current.volume = fireMuted ? 0 : normalizedVolume;
+    }
+  }   , [fireVolume, fireMuted]);
+
+  // --- Listen for server event when player successfully joins the game ---
+useEffect(() => {
+  socket.on('join-success', ({ playerId, nickname }) => {
+    setPlayerId(playerId);
+    console.log(`Joined as ${nickname} (ID: ${playerId})`);
+  });
+  return () => {
+    socket.off('join-success');
+  };
+}, []); 
+
+
+  useEffect(() => {
+    if (bgMusic.current) {
+        const normalizedVolume = Math.max(0, Math.min(1, bgVolume / 100)); // convert 0–100 → 0–1
+        bgMusic.current.volume = bgMuted ? 0 : normalizedVolume;
+    }
+  }, [bgVolume, bgMuted]);
+
+
   useEffect(() => {
     setMyShips(createShips(skinUrl));
     if (!skinUrl) {
-      console.warn('Game: ship skin URL is falsy. Verify that App passes an imported image or public URL.');
+      console.warn('Game: ship skin URL is falsy.');
     }
   }, [skinUrl]);
 
-  // --- placement validation ---
   const validateBoard = (ships) => {
     const placed = ships.filter((s) => s.position);
     if (placed.length !== 4) return false;
@@ -171,7 +263,6 @@ useEffect(() => {
   }  phaseRef.current = phase;
 }, [gameState?.gameStatus, skinUrl]);
 
-  // --- drag/drop & rotate handlers ---
   const handleShipDrop = (droppedShip, newPosition) => {
     setMyShips((ships) =>
       ships.map((s) => (s.id === droppedShip.id ? { ...s, position: newPosition } : s))
@@ -192,7 +283,6 @@ useEffect(() => {
       setMyShips((ships) => ships.map((s) => (s.id === item.id ? { ...s, position: null } : s))),
   }));
 
-  // --- confirm placement ---
   const handleConfirmPlacement = () => {
     if (!isPlacementValid) {
       alert('Invalid placement! Make sure all 4 ships are on board and not overlapping.');
@@ -214,7 +304,6 @@ useEffect(() => {
 
   const handleReadyForNextRound = () => socket.emit('ready-for-next-round');
 
-  // --- detect opponent fire for sound ---
   const prevGameState = useRef(null);
   useEffect(() => {
     if (!prevGameState.current || !gameState) {
@@ -244,14 +333,88 @@ useEffect(() => {
     prevGameState.current = gameState;
   }, [gameState, myId]);
 
-  // --- RENDER ---
   if (!gameState || !me) return <div>Loading...</div>;
 
+// --- SETTINGS MODAL ---
+const SettingsModal = () => (
+  <div className="settings-page">
+    <div className="settings-box">
+      <h1>⚙️ Game Sound Settings</h1>
+
+      <div className="setting-item">
+        <label>Fire Sound Volume: {fireMuted ? 'Muted' : `${fireVolume}%`}</label>
+        <input
+          type="range"
+          min="0"
+          max="100"
+          step="1"
+          value={fireVolume}
+          onChange={(e) => setFireVolume(Number(e.target.value))}
+        />
+        <button onClick={() => setFireMuted(!fireMuted)}>
+          {fireMuted ? 'Unmute' : 'Mute'}
+        </button>
+      </div>
+
+      <div className="setting-item">
+        <label>Background Music Volume: {bgMuted ? 'Muted' : `${bgVolume}%`}</label>
+        <input
+          type="range"
+          min="0"
+          max="100"
+          step="1"
+          value={bgVolume}
+          onChange={(e) => setBgVolume(Number(e.target.value))}
+        />
+        <button onClick={() => setBgMuted(!bgMuted)}>
+          {bgMuted ? 'Unmute' : 'Mute'}
+        </button>
+      </div>
+
+      <div className="settings-buttons">
+        <button className="surrender-btn" onClick={() => setShowSurrenderWarning(true)}>
+          🏳️ Surrender
+        </button>
+        <button className="close-btn" onClick={() => setShowSettings(false)}>
+          Close Settings
+        </button>
+      </div>
+    </div>
+  </div>
+);
+
+// --- SURRENDER WARNING POPUP ---
+const SurrenderWarning = () => (
+  <div className="warning-page">
+    <div className="warning-box">
+      <h2>Are you sure you want to surrender?</h2>
+      <p>You will lose this round immediately.</p>
+      <div className="warning-buttons">
+        <button className="cancel-btn" onClick={handleSurrenderCancel}>Cancel</button>
+        <button className="confirm-btn" onClick={handleSurrenderConfirm}>Yes, Surrender</button>
+      </div>
+    </div>
+  </div>
+);
+
+
+  // --- SETTINGS BUTTON ---
+const SettingsButton = () => (
+  <button className="settings-btn" onClick={() => setShowSettings(true)}>
+    ⚙️
+  </button>
+);
+
+  // --- Main rendering logic below ---
   if (gameState.gameStatus === 'waiting') {
     return (
       <div className="waiting-room">
+        <SettingsButton />
         <h2>Welcome, {nickname}!</h2>
         <h3>Waiting for another player to join...</h3>
+        {showSettings && <SettingsModal />}
+        {showSurrenderWarning && <SurrenderWarning />}
+
       </div>
     );
   }
@@ -269,6 +432,9 @@ useEffect(() => {
           Change BG
         </button>
       <div className="placement-container">
+        <SettingsButton />
+        {showSettings && <SettingsModal />}
+        {showSurrenderWarning && <SurrenderWarning />}
         <h3>Place Your Fleet (Click ship to rotate)</h3>
         <GameBoard
           ships={myShips.filter(s => s.position !== null)}
@@ -325,27 +491,39 @@ useEffect(() => {
     };
 
     if (gameState.gameStatus === 'gameover') {
-      const winnerName = gameState.players[gameState.winner]?.nickname;
-      return (
-        <div className="game-over">
-          <h1>Round Over!</h1>
-          <h2>Winner: {winnerName}</h2>
-          <h3>
-            Score: {me.nickname} {me.score} - {opponent?.nickname} {opponent?.score}
-          </h3>
-          {me.readyForNextRound ? (
-            <p>Waiting for opponent...</p>
-          ) : (
-            <button onClick={handleReadyForNextRound}>Ready for Next Round</button>
-          )}
-        </div>
-      );
-    }
+  const winnerName = gameState.players[gameState.winner]?.nickname;
+  return (
+    <div className="game-over">
+      <SettingsButton />
+      {showSettings && <SettingsModal />}
+      {showSurrenderWarning && <SurrenderWarning />}
+
+      <h1>Round Over!</h1>
+      <h2>Winner: {winnerName}</h2>
+      {disconnectMessage && (
+        <p className="disconnect-message">{disconnectMessage}</p>
+      )}
+      <h3>
+        Score: {me.nickname} {me.score} - {opponent?.nickname} {opponent?.score}
+      </h3>
+      {me.readyForNextRound ? (
+        <p>Waiting for opponent...</p>
+      ) : (
+        <button onClick={handleReadyForNextRound}>Ready for Next Round</button>
+      )}
+    </div>
+  );
+}
 
     if (gameState.gameStatus === 'matchover') {
       const winnerName = gameState.players[gameState.winner]?.nickname;
       return (
         <div className="game-over">
+          <SettingsButton />
+          {showSettings && <SettingsModal />}
+          {showSurrenderWarning && <SurrenderWarning />}
+
+
           <h1>MATCH OVER!</h1>
           <h2>FINAL WINNER: {winnerName}</h2>
           <h3>
@@ -367,6 +545,9 @@ useEffect(() => {
             Change BG
           </button>
             <div className="playing-container">
+            <SettingsButton />
+          {showSettings && <SettingsModal />}
+          {showSurrenderWarning && <SurrenderWarning />}
                 <div className="turn-indicator">
                     <h2 className={isMyTurn ? 'my-turn' : ''}> {isMyTurn ? "🔥 Your Turn!" : `Waiting for ${opponent?.nickname}'s turn...`} </h2>
                     <div className="timer">Time Left: {gameState.timer}</div>
