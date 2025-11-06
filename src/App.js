@@ -5,6 +5,7 @@ import { socket } from './socket';
 import NicknameForm from './components/NicknameForm';
 import Game from './components/Game';
 import { useNavigate } from 'react-router-dom';
+import ServerConfig from './components/ServerConfig';
 
 import shipRed from './assets/shipRed.png';
 import shipBlue from './assets/shipBlue.png';
@@ -18,6 +19,8 @@ function App() {
   const [isConnected, setIsConnected] = useState(socket.connected);
   const [gameState, setGameState] = useState(null);
   const [playerId, setPlayerId] = useState(null);
+  const [showServerConfig, setShowServerConfig] = useState(true);
+
 
   // ✅ Ship skins
   const availableShips = [shipRed, shipBlue, shipGreen, shipYellow];
@@ -86,6 +89,10 @@ const handlePlayerDisconnect = (disconnectedPlayer) => {
       prev === availableShips.length - 1 ? 0 : prev + 1
     );
   };
+
+  if (showServerConfig) {
+    return <ServerConfig onDone={() => setShowServerConfig(false)} />;
+  }
 
 
   return (
