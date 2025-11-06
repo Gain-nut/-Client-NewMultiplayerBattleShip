@@ -14,6 +14,7 @@
   padding: 20px;
   box-shadow: 0 10px 30px rgba(0,0,0,.28);
   color: #e9eef5;
+  overflow: hidden;
 }
 
 .server-title {
@@ -26,10 +27,14 @@
 .server-form {
   display: grid;
   gap: 10px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .server-input {
   width: 100%;
+  box-sizing: border-box;
+  display: block;
   background: #1a2026;
   color: #e9eef5;
   border: 1px solid #3a434f;
@@ -42,7 +47,7 @@
 
 .server-input:focus {
   border-color: #61dafb;
-  box-shadow: 0 0 0 2px rgba(97,218,251,.15);
+  box-shadow: 0 0 0 1px rgba(97,218,251,.18);
 }
 
 .server-error {
@@ -53,6 +58,7 @@
 
 .server-btn {
   width: 100%;
+  box-sizing: border-box;
   margin-top: 2px;
   padding: 12px 14px;
   font-size: 16px;
