@@ -15,15 +15,20 @@ function App() {
     const onConnect = () => setIsConnected(true);
     const onDisconnect = () => setIsConnected(false);
     const onUpdateGameState = (newState) => setGameState(newState);
+    const onSonarResult = ({ count, center }) => {
+      alert(`Sonar Scan at [${center.row}, ${center.col}] found ${count} ship parts in the surrounding area!`);
+    };
 
     socket.on('connect', onConnect);
     socket.on('disconnect', onDisconnect);
     socket.on('update-game-state', onUpdateGameState);
+    socket.on('sonar-result', onSonarResult); // <--- เพิ่มบรรทัดนี้
 
     return () => {
       socket.off('connect', onConnect);
       socket.off('disconnect', onDisconnect);
       socket.off('update-game-state', onUpdateGameState);
+      socket.off('sonar-result', onSonarResult); // <--- เพิ่มบรรทัดนี้
     };
   }, []);
 

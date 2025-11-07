@@ -1510,6 +1510,19 @@ import GameBoard from './GameBoard';
 import DraggableShip, { ItemTypes } from './DraggableShip';
 import './Game.css';
 
+<<<<<<< Updated upstream
+=======
+function Game(props) {
+  const { gameState, nickname, shipSkin, selectedShipSkin, onPlayerDisconnect} = props;
+  const myId = socket.id;
+  const me = gameState?.players?.[myId] || null;
+  const [activeItem, setActiveItem] = useState(null); // null, 'double-shot', 'sonar-scan'
+  const [itemUses, setItemUses] = useState({ doubleShot: 1, sonarScan: 1 }); // สมมติว่ามีอย่างละ 1 ครั้ง
+  
+  // emoji reactions that appear on the board (shared)
+  const [emojis, setEmojis] = useState([]); // { id, emoji, from, createdAt }
+  const emojiIdRef = useRef(1);
+>>>>>>> Stashed changes
 
 const initialShips = [
   { id: 1, length: 4, position: null, orientation: 'horizontal', image: '/images/shipRed.png' },
@@ -1648,12 +1661,45 @@ function Game({ gameState, nickname }) {
       row.forEach((cell, c_idx) => { if (cell) myDisplayBoard[r_idx][c_idx] = cell; });
     });
 
+<<<<<<< Updated upstream
     const handleFire = (row, col) => {
       if (isMyTurn && gameState.gameStatus === 'playing' && opponent && !opponent.gameBoard[row][col]) {
         socket.emit('fire-shot', { row, col });
       }
     };
+=======
+    // const handleFire = (row, col) => {
+    //   if (isMyTurn && gameState.gameStatus === 'playing' && opponent && !opponent.gameBoard[row][col]) {
+    //     socket.emit('fire-shot', { row, col });
+    //     if (fireSound.current) {
+    //       fireSound.current.currentTime = 0;
+    //       fireSound.current.play().catch(() => {});
+    //     }
+    //   }
+    // };
+>>>>>>> Stashed changes
 
+    const handleFire = (row, col) => {
+    if (isMyTurn && gameState.gameStatus === 'playing') {
+      // เช็คว่ากำลังใช้ไอเทมอยู่หรือไม่
+      if (activeItem === 'double-shot') {
+        if (itemUses.doubleShot > 0) {
+          socket.emit('use-item-double-shot', { row, col });
+          setItemUses(uses => ({ ...uses, doubleShot: uses.doubleShot - 1 }));
+        }
+      } else if (activeItem === 'sonar-scan') {
+        if (itemUses.sonarScan > 0) {
+          socket.emit('use-item-sonar-scan', { row, col });
+          setItemUses(uses => ({ ...uses, sonarScan: uses.sonarScan - 1 }));
+        }
+      } else {
+        // ยิงปกติ (ถ้าไม่ได้เลือกไอเทม)
+        socket.emit('fire-shot', { row, col });
+      }
+      
+      setActiveItem(null); // ปิดการใช้งานไอเทมหลังจากคลิก
+    }
+  };
     if (gameState.gameStatus === 'gameover') {
           const winnerName = gameState.players[gameState.winner]?.nickname;
           return (
@@ -1691,6 +1737,24 @@ function Game({ gameState, nickname }) {
                     <h2 className={isMyTurn ? 'my-turn' : ''}> {isMyTurn ? "🔥 Your Turn!" : `Waiting for ${opponent?.nickname}'s turn...`} </h2>
                     <div className="timer">Time Left: {gameState.timer}</div>
                 </div>
+                <div className="item-controls">
+                <button 
+                  onClick={() => setActiveItem(activeItem === 'double-shot' ? null : 'double-shot')}
+                  className={activeItem === 'double-shot' ? 'active' : ''}
+                  disabled={itemUses.doubleShot <= 0}
+                >
+                  Double Shot ({itemUses.doubleShot} left)
+                </button>
+                <button 
+                  onClick={() => setActiveItem(activeItem === 'sonar-scan' ? null : 'sonar-scan')}
+                  className={activeItem === 'sonar-scan' ? 'active' : ''}
+                  disabled={itemUses.sonarScan <= 0}
+                >
+                  Sonar Scan ({itemUses.sonarScan} left)
+                </button>
+                {activeItem && <p>Click on the opponent's board to use {activeItem}!</p>}
+              </div>
+            
                 <div className="boards-container">
                   <div className="board-area">
                     <h3>Your Board (Score: {me.score})</h3>
