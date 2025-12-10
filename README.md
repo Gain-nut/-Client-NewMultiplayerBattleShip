@@ -95,9 +95,9 @@ Enter the **server’s IP** when prompted to join a match.
 
 -----
 
-## 🔗 Backend Repository
+## 🔗 Server Repository
 
-The **Node.js + Express + Socket.IO game server** is hosted in a [separate repository](https://www.google.com/search?q=LINK_TO_BACKEND_REPO_HERE).
+The **Node.js + Express + Socket.IO game server** is hosted in a [separate repository](https://github.com/Gain-nut/-Server-NewMultiplayerBattleShip).
 
 **Ensure the server is running before launching the client.**
 
