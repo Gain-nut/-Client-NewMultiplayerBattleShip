@@ -1,70 +1,104 @@
-# Getting Started with Create React App
+# 🎮 New Multiplayer Battleship — Client (React)
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+This is the **React frontend client** for the New Multiplayer Battleship game.
 
-## Available Scripts
+It connects to the server using **Socket.IO** with **IP-based matchmaking**, allowing players to place ships, chat with emojis, customize ship skins, and battle in real time.
 
-In the project directory, you can run:
+-----
 
-### `npm start`
+## 🚀 Features
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+### 🎯 Core Gameplay
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+  * **Real-time multiplayer Battleship**
+  * **Drag-and-drop ship placement** (using `react-dnd`)
+  * **Turn-based firing system**
+  * **Hit / miss animations** via custom canvas particle effects
+  * **Live sync with backend** through WebSockets
+  * **Automatic detection** of opponent disconnects
 
-### `npm test`
+### 💬 Extra Features
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+  * **Emoji chat**
+  * **IP-based matchmaking** — enter server IP to join
+  * **Ship skin customization**
+  * **Round-based game loop** (Ready → Play → Next Round)
 
-### `npm run build`
+-----
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## 🔌 Socket.IO Integration
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+The client connects to the server using the **IP provided by the player**.
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### Client → Server Events
 
-### `npm run eject`
+  * `join-game`
+  * `place-ships`
+  * `fire-shot`
+  * `ready-for-next-round`
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+### Server → Client Events
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+  * `update-game-state`
+  * `player-disconnect`
+  * `game-reset`
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+-----
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+## 📁 Project Structure
 
-## Learn More
+```
+/src
+ ├── App.js          # Main UI + game flow
+ ├── Game.js         # Board rendering & interactions
+ ├── effects.js      # Canvas particle effects (fire / debris)
+ ├── socket.js       # Socket.IO client setup
+ ├── App.css         # Styling
+ └── index.js        # App entry point
+```
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+-----
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+## 🎆 Visual Effects System
 
-### Code Splitting
+A **custom canvas-based particle engine** powers the hit/miss visuals:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+  * **Fire burst effects**
+  * **Debris / splash particles**
+  * **Cell-based animation spawning**
 
-### Analyzing the Bundle Size
+Creates a more immersive and dynamic gameplay experience.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+-----
 
-### Making a Progressive Web App
+## ▶️ Getting Started
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+### 1️⃣ Install dependencies
 
-### Advanced Configuration
+```bash
+npm install
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+### 2️⃣ Run the client
 
-### Deployment
+```bash
+npm start
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+### 3️⃣ Open the game
 
-### `npm run build` fails to minify
+```
+http://localhost:3000
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+Enter the **server’s IP** when prompted to join a match.
+
+-----
+
+## 🔗 Backend Repository
+
+The **Node.js + Express + Socket.IO game server** is hosted in a [separate repository](https://www.google.com/search?q=LINK_TO_BACKEND_REPO_HERE).
+
+**Ensure the server is running before launching the client.**
+
+-----
